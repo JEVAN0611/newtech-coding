@@ -1,0 +1,128 @@
+.App {
+  text-align: center;
+}
+
+.App-header {
+  background-color: #282c34;
+  /* 배경 이미지 설정 (나중에 이미지 넣을 때 사용) */
+  background-image: url("./assets/images/daegu-header.jpg");
+  background-size: cover;
+  background-position: center;
+  background-blend-mode: overlay;
+  background-color: rgba(40, 44, 52, 0.8); /* 텍스트 가독성을 위한 오버레이 */
+
+  padding: 40px 20px;
+  color: white;
+  min-height: 100vh; /* 전체 화면 높이 */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+/* 배경 이미지가 없을 때는 그라데이션 */
+.App-header::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  opacity: 0.3;
+  z-index: -1;
+}
+
+main {
+  background-color: #f5f5f5;
+  min-height: 100vh;
+  padding: 20px 0;
+}
+
+/* 바운스 애니메이션 */
+@keyframes bounce {
+  0%,
+  20%,
+  50%,
+  80%,
+  100% {
+    transform: translateY(0);
+  }
+  40% {
+    transform: translateY(-10px);
+  }
+  60% {
+    transform: translateY(-5px);
+  }
+}
+
+/* 부드러운 스크롤 */
+html {
+  scroll-behavior: smooth;
+}
+
+/* 스크롤 인디케이터 스타일링 */
+.scroll-indicator {
+  margin-top: 40px;
+  animation: bounce 2s infinite;
+  cursor: pointer;
+  user-select: none;
+  padding: 20px;
+  border-radius: 15px;
+  transition: all 0.3s ease;
+}
+
+.scroll-indicator:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  transform: scale(1.05);
+  animation-play-state: paused; /* 호버시 애니메이션 멈춤 */
+}
+
+.scroll-indicator:active {
+  transform: scale(0.95);
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+.scroll-indicator p {
+  font-size: 16px;
+  margin: 10px 0;
+  opacity: 0.9;
+  text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+}
+
+.scroll-arrow {
+  font-size: 30px;
+  animation: bounce 1.5s infinite;
+  text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+  transition: transform 0.2s ease;
+}
+
+.scroll-indicator:hover .scroll-arrow {
+  transform: translateY(-5px);
+  animation-play-state: paused;
+}
+
+/* 제목 스타일링 */
+.App-header h1 {
+  font-size: 3rem;
+  margin-bottom: 20px;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.App-header p {
+  font-size: 1.2rem;
+  opacity: 0.9;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+/* 반응형 디자인 */
+@media (max-width: 768px) {
+  .App-header h1 {
+    font-size: 2rem;
+  }
+
+  .App-header p {
+    font-size: 1rem;
+  }
+}
