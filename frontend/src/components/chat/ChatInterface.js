@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import TripSequence from '../webtoon/TripSequence';
 
 function ChatInterface({ onNameSubmit }) {
   const [userName, setUserName] = useState('');
@@ -6,6 +7,10 @@ function ChatInterface({ onNameSubmit }) {
   const [currentMessage, setCurrentMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isNameSubmitted, setIsNameSubmitted] = useState(false);
+  const [recommendedSpot, setRecommendedSpot] = useState(null);
+  const [showTrip, setShowTrip] = useState(false);
+
+  const SPOT_NAMES = ['동성로', '달성공원', '수성못'];
 
   // 이름 제출
   const handleNameSubmit = async () => {
@@ -30,6 +35,9 @@ function ChatInterface({ onNameSubmit }) {
         { speaker: '나', message: `안녕하세요! 제 이름은 ${userName}입니다.` },
         { speaker: '대구-대구', message: data.response }
       ]);
+
+      const spot = SPOT_NAMES.find(name => data.response.includes(name));
+      setRecommendedSpot(spot || null);
       
       setIsNameSubmitted(true);
       if (onNameSubmit) onNameSubmit(userName);
@@ -43,15 +51,11 @@ function ChatInterface({ onNameSubmit }) {
     setIsLoading(false);
   };
 
-  // 메시지 전송
-  const handleMessageSend = async () => {
-    if (!currentMessage.trim()) return;
+  const sendMessage = async (message) => {
+    if (!message.trim()) return;
 
-    const userMsg = currentMessage;
-    setCurrentMessage('');
-    
-    // 사용자 메시지 추가
-    setChatHistory(prev => [...prev, { speaker: '나', message: userMsg }]);
+    setRecommendedSpot(null);
+    setChatHistory(prev => [...prev, { speaker: '나', message }]);
     setIsLoading(true);
 
     try {
@@ -61,24 +65,50 @@ function ChatInterface({ onNameSubmit }) {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          message: userMsg,
+          message,
           userName: userName
         }),
       });
 
       const data = await response.json();
-      
-      // AI 응답 추가
+
       setChatHistory(prev => [...prev, { speaker: '대구-대구', message: data.response }]);
+      const spot = SPOT_NAMES.find(name => data.response.includes(name));
+      setRecommendedSpot(spot || null);
     } catch (error) {
       console.error('API 호출 에러:', error);
-      setChatHistory(prev => [...prev, { 
-        speaker: '대구-대구', 
-        message: '미안, 뭔가 문제가 생겼어! 다시 해볼래? 😅' 
+      setChatHistory(prev => [...prev, {
+        speaker: '대구-대구',
+        message: '미안, 뭔가 문제가 생겼어! 다시 해볼래? 😅'
       }]);
     }
     setIsLoading(false);
   };
+
+  // 메시지 전송
+  const handleMessageSend = () => {
+    const userMsg = currentMessage;
+    setCurrentMessage('');
+    sendMessage(userMsg);
+  };
+
+  const handleGoToSpot = () => {
+    setShowTrip(true);
+  };
+
+  const handleFindAnother = () => {
+    setRecommendedSpot(null);
+    sendMessage('다른 곳도 추천해줄래?');
+  };
+
+  const handleTripComplete = () => {
+    setShowTrip(false);
+    sendMessage('가는 중이야...');
+  };
+
+  if (showTrip && recommendedSpot) {
+    return <TripSequence spot={recommendedSpot} onComplete={handleTripComplete} />;
+  }
 
   return (
     <div style={{
@@ -168,6 +198,43 @@ function ChatInterface({ onNameSubmit }) {
               대구-대구가 생각 중... 💭
             </div>
           )}
+        </div>
+      )}
+
+      {recommendedSpot && (
+        <div style={{
+          textAlign: 'center',
+          marginBottom: '15px',
+          display: 'flex',
+          gap: '10px',
+          justifyContent: 'center'
+        }}>
+          <button
+            onClick={handleGoToSpot}
+            style={{
+              padding: '8px 12px',
+              backgroundColor: '#28a745',
+              color: 'white',
+              border: 'none',
+              borderRadius: '5px',
+              cursor: 'pointer'
+            }}
+          >
+            {`${recommendedSpot}로 가기`}
+          </button>
+          <button
+            onClick={handleFindAnother}
+            style={{
+              padding: '8px 12px',
+              backgroundColor: '#6c757d',
+              color: 'white',
+              border: 'none',
+              borderRadius: '5px',
+              cursor: 'pointer'
+            }}
+          >
+            다른 곳 찾기
+          </button>
         </div>
       )}
 
