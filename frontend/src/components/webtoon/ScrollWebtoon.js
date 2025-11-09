@@ -31,31 +31,14 @@ function ScrollWebtoon() {
   }, [visiblePanels]);
 
   const panels = [
-    {
-      id: 1,
-      image: '/assets/images/webtoon/panel1-daegu-station.jpg',
-      alt: '대구역에 도착한 독자의 모습'
-    },
-    {
-      id: 2, 
-      image: '/assets/images/webtoon/panel2-daegu-appear.jpg',
-      alt: '독자를 반기는 대구-대구 캐릭터'
-    },
-    {
-      id: 3,
-      image: '/assets/images/webtoon/panel3-daegu-running.jpg', 
-      alt: '숨차게 달려오는 대구-대구'
-    },
-    {
-      id: 4,
-      image: '/assets/images/webtoon/panel4-daegu-question.jpg',
-      alt: '이름을 묻는 대구-대구'
-    },
-    {
-      id: 5,
-      image: '/assets/images/webtoon/panel5-user-response.jpg',
-      alt: '독자가 답변하는 컷'
-    }
+    { id: 1, image: '/assets/images/webtoon/뉴테크 메인0.jpg', alt: '대구역 풍경 — 시작!' },
+    { id: 2, image: '/assets/images/webtoon/뉴테크 메인1.jpg', alt: '대구-대구 등장!' },
+    { id: 3, image: '/assets/images/webtoon/뉴테크 메인2.jpg', alt: '반가워! 오늘 뭐 하고 싶어?' },
+    { id: 4, image: '/assets/images/webtoon/뉴테크 메인3.jpg', alt: '동성로/달성공원/수성못 중 골라봐!' },
+    { id: 5, image: '/assets/images/webtoon/뉴테크 메인4.jpg', alt: '취향대로 추천해줄게' },
+    { id: 6, image: '/assets/images/webtoon/뉴테크 메인5.jpg', alt: '가볍게 둘러보고 결정하자' },
+    { id: 7, image: '/assets/images/webtoon/뉴테크 메인6.jpg', alt: '대구-대구가 안내해줄게' },
+    { id: 8, image: '/assets/images/webtoon/뉴테크 메인7.jpg', alt: '이제 아래서 대화 시작!' },
   ];
 
   return (
@@ -72,6 +55,8 @@ function ScrollWebtoon() {
           style={{
             margin: '50px 0',
             minHeight: '400px',
+            width: '100%',
+            boxSizing: 'border-box',
             opacity: visiblePanels.includes(index) ? 1 : 0,
             transform: visiblePanels.includes(index) 
               ? 'translateY(0)' 
@@ -87,84 +72,32 @@ function ScrollWebtoon() {
             boxShadow: '0 4px 15px rgba(0,0,0,0.1)'
           }}
         >
-          {/* 임시 이미지 (나중에 실제 이미지로 교체) */}
+          {/* 배경 이미지 패널 (텍스트/이모티콘 오버레이 제거) */}
           <div style={{
             width: '100%',
             height: '400px',
-            backgroundImage: `url(${panel.image})`,
+            backgroundImage: `url("${panel.image}")`,
             backgroundSize: 'cover',
             backgroundPosition: 'center',
             backgroundRepeat: 'no-repeat',
             borderRadius: '7px'
           }}>
-            {/* 이미지가 없을 때 임시 표시 */}
-            <div style={{
-              width: '100%',
-              height: '100%',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              backgroundColor: 'rgba(255,255,255,0.9)',
-              borderRadius: '7px'
-            }}>
-              <div style={{ 
-                fontSize: '48px', 
-                marginBottom: '20px' 
-              }}>
-                {index === 0 && '🚉'}
-                {index === 1 && '🎭'}
-                {index === 2 && '💨'}
-                {index === 3 && '❓'}
-                {index === 4 && '💬'}
-              </div>
-              <p style={{ 
-                color: '#666', 
-                textAlign: 'center',
-                fontSize: '16px'
-              }}>
-                {panel.alt}
-              </p>
-              <p style={{
-                color: '#999',
-                fontSize: '12px',
-                marginTop: '10px'
-              }}>
-                컷 {panel.id}/5
-              </p>
-            </div>
+            {/* 내용 없음: 순수 이미지만 노출 */}
           </div>
         </div>
       ))}
 
-{/* 5컷 모두 보였을 때 인터랙티브 섹션 */}
-{visiblePanels.length >= 5 && (
+{/* 5컷 모두 보였을 때 챗 인터페이스 노출 */}
+{visiblePanels.length >= panels.length && (
   <div style={{
-    marginTop: '80px',
+    marginTop: '60px',
     animation: 'fadeIn 1s ease-in-out'
   }}>
-    <div style={{
-      padding: '30px',
-      border: '3px dashed #007acc',
-      borderRadius: '15px',
-      backgroundColor: '#f0f8ff',
-      textAlign: 'center',
-      marginBottom: '20px'
-    }}>
-      <h3 style={{ color: '#007acc', marginBottom: '20px' }}>
-        🎮 인터랙티브 웹툰 시작!
-      </h3>
-      <p style={{ marginBottom: '20px', color: '#666' }}>
-        이제부터 대구-대구와 실제로 AI 대화할 수 있어요!
-      </p>
-    </div>
-    
-    {/* 실제 AI 채팅 컴포넌트 */}
-<ChatInterface />
+    <ChatInterface />
   </div>
 )}
 
-    </div>  // ← 이 줄이 빠져있었어요!
+    </div>
   );
 }
 

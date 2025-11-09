@@ -2,18 +2,27 @@
   text-align: center;
 }
 
+.App-content {
+  opacity: 1;
+  transition: opacity 0.4s ease;
+}
+
+.App.is-loading .App-content {
+  opacity: 0;
+  pointer-events: none;
+}
+
 .App-header {
   background-color: #282c34;
   /* 배경 이미지 설정 (나중에 이미지 넣을 때 사용) */
   background-image: url("./assets/images/daegu-header.jpg");
   background-size: cover;
   background-position: center;
-  background-blend-mode: overlay;
-  background-color: rgba(40, 44, 52, 0.8); /* 텍스트 가독성을 위한 오버레이 */
+  /* 오버레이 제거: 순수 배경 이미지 노출 */
 
   padding: 40px 20px;
   color: white;
-  min-height: 100vh; /* 전체 화면 높이 */
+  min-height: 120vh; /* 전체 화면 높이 확대 */
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -21,18 +30,26 @@
   position: relative;
 }
 
-/* 배경 이미지가 없을 때는 그라데이션 */
-.App-header::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  opacity: 0.3;
-  z-index: -1;
+/* 중앙 부양 타이틀 이미지 */
+.hero-title {
+  /* 높이 중심으로 확대 (가로 비율 유지) */
+  height: clamp(260px, 30vh, 380px);
+  width: auto;
+  max-width: 92vw;
+  animation: floatY 4.5s ease-in-out infinite alternate;
+  /* 더 옅은 그림자로 조정 */
+  filter: drop-shadow(0 14px 22px rgba(0,0,0,0.12));
+  will-change: transform;
+  /* 타이틀을 화면 위쪽으로 더 이동 */
+  margin-top: -680px;
 }
+
+@keyframes floatY {
+  0% { transform: translateY(0) scaleY(0.9); }
+  100% { transform: translateY(-12px) scaleY(0.9); }
+}
+
+/* 배경 그라데이션 오버레이 제거 */
 
 main {
   background-color: #f5f5f5;
@@ -64,7 +81,7 @@ html {
 
 /* 스크롤 인디케이터 스타일링 */
 .scroll-indicator {
-  margin-top: 40px;
+  margin-top: 120px; /* 타이틀 이미지 아래로 여백 확대 */
   animation: bounce 2s infinite;
   cursor: pointer;
   user-select: none;
@@ -116,6 +133,47 @@ html {
   text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
 }
 
+/* 로딩 오버레이 */
+.loading-overlay {
+  position: fixed;
+  inset: 0;
+  background: radial-gradient(circle at top, rgba(18, 24, 33, 0.95), #040507 75%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  color: #ffffff;
+  z-index: 10000;
+  padding: 20px;
+}
+
+.loading-hero {
+  width: clamp(220px, 45vw, 320px);
+  filter: drop-shadow(0 18px 30px rgba(0,0,0,0.2));
+  animation: floatY 4s ease-in-out infinite;
+}
+
+.loading-spinner {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  border: 6px solid rgba(255, 255, 255, 0.18);
+  border-top-color: #f5c542;
+  animation: spin 1s linear infinite;
+}
+
+.loading-text {
+  font-size: 1.05rem;
+  font-weight: 600;
+  letter-spacing: 0.4px;
+}
+
+.loading-subtext {
+  font-size: 0.95rem;
+  opacity: 0.75;
+}
+
 /* 반응형 디자인 */
 @media (max-width: 768px) {
   .App-header h1 {
@@ -124,5 +182,20 @@ html {
 
   .App-header p {
     font-size: 1rem;
+  }
+  .scroll-indicator { margin-top: 80px; }
+  .hero-title { margin-top: -620px; }
+  .loading-overlay {
+    padding: 0 30px;
+  }
+  .loading-spinner {
+    width: 60px;
+    height: 60px;
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
   }
 }
