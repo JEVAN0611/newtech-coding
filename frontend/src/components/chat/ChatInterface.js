@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import DestinationWebtoon from "../webtoon/DestinationWebtoon";
+import { API_BASE_URL } from "../../config/constants";
 import "./ChatInterface.css";
 
 const ASSET_BASE = `${process.env.PUBLIC_URL || ""}/assets/images/character`;
@@ -726,7 +727,7 @@ function ChatInterface({ onNameSubmit }) {
       setCharacterEmotion("happy");
 
       try {
-        const response = await fetch("http://localhost:3001/api/chat", {
+        const response = await fetch(`${API_BASE_URL}/api/chat`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ message: "안녕", userName: "" }),
@@ -774,7 +775,7 @@ function ChatInterface({ onNameSubmit }) {
     if (onNameSubmit) onNameSubmit(userName);
 
     try {
-      const response = await fetch("http://localhost:3001/api/chat", {
+      const response = await fetch(`${API_BASE_URL}/api/chat`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -841,7 +842,7 @@ function ChatInterface({ onNameSubmit }) {
     const thinkStarted = Date.now();
 
     try {
-      const response = await fetch("http://localhost:3001/api/chat", {
+      const response = await fetch(`${API_BASE_URL}/api/chat`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -975,7 +976,7 @@ function ChatInterface({ onNameSubmit }) {
         return;
       }
       const res = await fetch(
-        `http://localhost:3001/api/spots/${spotId}/arrive`,
+        `${API_BASE_URL}/api/spots/${spotId}/arrive`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
