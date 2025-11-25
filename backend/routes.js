@@ -1,4 +1,4 @@
-// backend/routes.js (개선 버전)
+// backend/routes.js
 const express = require("express");
 const {
   chatWithDaegu,
@@ -40,13 +40,15 @@ router.post("/api/chat", async (req, res) => {
         response: aiResponse.message,
         sessionId: aiResponse.sessionId,
         stage: aiResponse.stage,
+        emotion: aiResponse.emotion || 'happy', // 감정 정보 추가
         character: "대구-대구",
         recommendation: aiResponse.recommendation || null,
         timestamp: new Date().toISOString(),
         terminated: aiResponse.terminated || false,
         warning: aiResponse.warning || false,
         endCut: aiResponse.endCut || false,
-        strikes: aiResponse.strikes || 0
+        strikes: aiResponse.strikes || 0,
+        invalidInput: aiResponse.invalidInput || false // 무효 입력 정보 추가
       });
     } else if (aiResponse.message) {
       res.json({
@@ -227,9 +229,7 @@ router.post("/api/spots/:spotId/arrive", async (req, res) => {
     }
 
     // 도착 인트로 메시지(짧고 선명하게, 장소 맥락 고정)
-    const topHighlights = (spot.highlights || []).slice(0, 3).join(', ');
-    const topFoods = (spot.food || []).slice(0, 2).join(', ');
-    const arrivalIntro = `여긴 ${spot.name}! ${spot.description}. 인기 스팟은 ${topHighlights}${topFoods ? `, 먹거리는 ${topFoods}` : ''}. 궁금한 거 있어?`;
+    const arrivalIntro = `여긴 ${spot.name}! 도착했어. 궁금한 거 있어?`;
 
     // 도착 컨텍스트로 AI에게 인지시킴
     const aiResponse = await chatWithDaegu(`${spot.name}에 도착했어!`, sessionId);

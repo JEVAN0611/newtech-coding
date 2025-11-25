@@ -1,4 +1,7 @@
-require('dotenv').config();
+// .env 파일은 server.js에서 이미 로드되므로 중복 호출 방지
+// 하지만 테스트 환경에서 직접 실행될 수도 있으니 안전장치 추가
+const path = require('path');
+require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
 
 let OpenAIClientCtor = null;
 try {
@@ -37,33 +40,54 @@ const DAEGU_SPOTS = {
   dongseongro: {
     name: '동성로',
     keywords: ['쇼핑', '맛집', '번화가', '젊은', '활발', '시내'],
-    description: '대구의 메인 상권으로 쇼핑과 맛집이 가득한 곳',
-    transport: '지하철 1호선 중앙로역 하차',
-    highlights: ['CGV 대구', '동성로 먹거리', '교보문고'],
-    food: ['막창', '찜갈비', '치킨'],
-    foodAreas: ['메인 거리와 골목 상권', '지하철역 주변', '영화관/백화점 인근'],
   },
   dalseong: {
     name: '달성공원',
     keywords: ['자연', '산책', '조용', '역사', '공원', '힐링'],
-    description: '대구의 역사가 담긴 공원으로 산책하기 좋은 곳',
-    transport: '지하철 1호선 달성공원역 하차',
-    highlights: ['동물원', '향토역사관', '산책로'],
-    food: ['공원 근처 한정식', '전통차'],
-    foodAreas: ['공원 입구 상권', '산책로 초입 로컬 식당가', '주차장 방향 상가'],
   },
   suseongmot: {
     name: '수성못',
     keywords: ['호수', '경치', '카페', '데이트', '사진', '야경'],
-    description: '아름다운 호수와 함께하는 낭만적인 장소',
-    transport: '지하철 2호선 수성못역 하차',
-    highlights: ['호수 둘레길', '음악분수', '카페거리'],
-    food: ['카페', '이탈리안', '호수뷰 레스토랑'],
-    foodAreas: ['카페거리 일대', '호수변 산책로 초입', '주차장 쪽 상권'],
   },
 };
 
-const DEFAULT_PERSONA = '';
+const DEFAULT_PERSONA = `당신은 대구 여행 가이드 캐릭터 "대구-대구"입니다.
+
+[성격과 말투]
+- 친근하고 활발한 20대 친구 같은 느낌
+- 자연스럽고 편안한 대화 스타일
+- 이모지를 적절히 사용해서 친근감 표현
+- 반말로 편하게 대화하되, 존중하는 태도 유지
+
+[대화 방식]
+- 1-2문장으로 짧고 명확하게 대화 (간결함이 중요!)
+- 카톡하듯이 편하게, 핵심만 전달
+- 상대방 말에 공감하고 반응하면서 자연스럽게 취향 파악
+- 딱딱한 질문보다는 "어떤 여행 좋아해?" 식으로 가볍게
+
+[추천 타이밍]
+- 3-4번 정도 대화 나누면서 취향 파악
+- 충분히 파악되면 자연스럽게 장소 추천
+- 너무 서두르지 말고, 그렇다고 너무 늦지도 않게
+- 대화 흐름상 적절한 타이밍에 추천
+
+[장소별 특징]
+- 동성로: 쇼핑, 맛집, 번화가, 활기찬 분위기, 젊은 느낌
+- 달성공원: 자연, 산책, 힐링, 조용한 분위기, 역사 느낌
+- 수성못: 물가 경치, 카페, 데이트, 사진 찍기 좋음, 낭만적
+
+[대화 꿀팁]
+- 상대방이 말한 키워드 자연스럽게 활용해서 공감 표현
+- "아 그거 좋지!", "오 취향 좋은데?" 같은 자연스러운 리액션
+- 추천할 때도 "이런 거 어때?" 식으로 부담 없이
+- 거절해도 "그럼 이런 건?" 하면서 다른 옵션 제시
+
+[대구에 없는 것 요청 시]
+- 바다 → "바다는 없지만 수성못에서 물가 느낌 즐길 수 있어!"
+- 산/등산 → "등산 코스는 없지만 달성공원에서 자연 산책 괜찮아!"
+- 놀이공원 → "테마파크는 없지만 동성로 가면 활기찬 분위기 즐길 수 있어!"
+- 억지로 추천하지 말고, 솔직하게 대안 제시`;
+
 const DAEGU_PERSONA = process.env.CHARACTER_PROMPT ?? DEFAULT_PERSONA;
 
 function pickRandom(items = []) {
@@ -71,9 +95,188 @@ function pickRandom(items = []) {
   return items[Math.floor(Math.random() * items.length)];
 }
 
+// 대구에 없는 요청을 세 장소로 유도하는 매핑
+const ALTERNATIVE_MAPPING = {
+  // 바다/물 관련 → 수성못
+  '바다': 'suseongmot',
+  '해변': 'suseongmot',
+  '물': 'suseongmot',
+  '수영': 'suseongmot',
+  '강': 'suseongmot',
+  // 산/등산 관련 → 달성공원
+  '등산': 'dalseong',
+  '산': 'dalseong',
+  '하이킹': 'dalseong',
+  '트레킹': 'dalseong',
+  '숲': 'dalseong',
+  // 놀이공원/테마파크 → 동성로
+  '놀이공원': 'dongseongro',
+  '테마파크': 'dongseongro',
+  '롤러코스터': 'dongseongro',
+};
+
+// 무의미한 입력 검증 및 재미있는 응답
+function validateUserInput(message) {
+  const trimmed = (message || '').trim();
+
+  // 빈 메시지
+  if (!trimmed || trimmed.length < 2) {
+    return { valid: false, reason: 'empty' };
+  }
+
+  // 자음/모음만 연속 검사 - 강화된 버전
+  // 방법 1: 기존 자음/모음 패턴 검사
+  const onlyJamoPattern = /^[ㄱ-ㅎㅏ-ㅣ\s]+$/;
+  if (onlyJamoPattern.test(trimmed) && trimmed.length > 3) {
+    return { valid: false, reason: 'jamo_only' };
+  }
+
+  // 방법 2: 완성된 한글 음절 비율 체크
+  // 완성된 한글: U+AC00-U+D7A3 (가-힣)
+  const completeKorean = trimmed.match(/[가-힣]/g) || [];
+  const totalChars = trimmed.replace(/\s/g, '').length;
+
+  // 전체 문자의 90% 이상이 자음/모음만이면 무효 (완성된 한글이 10% 미만)
+  if (totalChars > 3 && completeKorean.length / totalChars < 0.1) {
+    return { valid: false, reason: 'incomplete_characters' };
+  }
+
+  // 같은 문자 반복 (ㅋㅋㅋㅋㅋ는 허용, 그 외 5개 이상 반복은 차단)
+  const repeatPattern = /(.)\1{4,}/;
+  if (repeatPattern.test(trimmed) && !/[ㅋㅎ]/.test(trimmed)) {
+    return { valid: false, reason: 'repeat' };
+  }
+
+  // 숫자만 (긴 숫자 입력)
+  if (/^\d{5,}$/.test(trimmed)) {
+    return { valid: false, reason: 'numbers_only' };
+  }
+
+  // 특수문자만
+  if (/^[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?~`]+$/.test(trimmed)) {
+    return { valid: false, reason: 'symbols_only' };
+  }
+
+  return { valid: true };
+}
+
+function getInvalidInputResponse() {
+  const responses = [
+    '?왜카노',
+    '어디 아프니',
+    '상태가 말이 아니구나',
+    '집에 가고 싶니',
+  ];
+  return pickRandom(responses);
+}
+
+// AI 응답에서 감정 분석 (사용자 감정 우선 공감)
+function analyzeEmotion(message, stage, userMessage) {
+  const msg = (message || '').toLowerCase();
+  const userMsg = (userMessage || '').toLowerCase();
+
+  // 무효한 입력에는 당황 표정
+  if (!message || message.includes('?왜카노') || message.includes('어디 아프니')) {
+    return 'confused';
+  }
+
+  // 1단계: 사용자 감정 분석 (공감 우선)
+  // 슬픔 감정 이모티콘 및 키워드
+  const sadEmoticons = ['ㅠ', 'ㅜ', 'ㅡㅡ', '...', '흑'];
+  const sadKeywords = ['슬퍼', '힘들어', '우울', '외로', '쓸쓸', '속상', '울고', '눈물'];
+  if (sadEmoticons.some(emo => userMsg.includes(emo)) ||
+      sadKeywords.some(keyword => userMsg.includes(keyword))) {
+    return 'sad';
+  }
+
+  // 분노 감정 (사용자가 화났을 때 공감)
+  const angryKeywords = ['화나', '짜증', '싫어', '별로', '안돼', '못해', '최악', '빡쳐'];
+  if (angryKeywords.some(keyword => userMsg.includes(keyword))) {
+    return 'angry';
+  }
+
+  // 걱정/불안 감정
+  const worryKeywords = ['걱정', '불안', '무서워', '두려워', '떨려'];
+  if (worryKeywords.some(keyword => userMsg.includes(keyword))) {
+    return 'worry';
+  }
+
+  // 기쁨/신남 감정 (사용자가 좋아할 때) - 우선순위 높임
+  const excitedEmoticons = ['ㅋ', 'ㅎ'];
+  const excitedKeywords = ['좋아', '최고', '굿', '완전', '너무', '신난다', '신나', '재밌', '재미', '좋다', '좋네', '끝내주', '짱'];
+  if (excitedEmoticons.some(emo => userMsg.includes(emo.repeat(2))) || // ㅋㅋ, ㅎㅎ 등
+      excitedKeywords.some(keyword => userMsg.includes(keyword))) {
+    return 'excited';
+  }
+
+  // 놀람 감정 - excited 다음에 체크
+  const surprisedEmoticons = ['!', '!!', '헉', '어머'];
+  const surprisedKeywords = ['대박', '진짜?', '정말?', '놀라', '어머', '헐'];
+  if (surprisedEmoticons.some(emo => userMsg.includes(emo)) ||
+      surprisedKeywords.some(keyword => userMsg.includes(keyword))) {
+    return 'surprised';
+  }
+
+  // 2단계: AI 응답 내용 분석
+  // AI가 분노 표현
+  if (angryKeywords.some(keyword => msg.includes(keyword))) {
+    return 'angry';
+  }
+
+  // AI가 슬픔 표현
+  if (sadKeywords.some(keyword => msg.includes(keyword))) {
+    return 'sad';
+  }
+
+  // AI가 걱정 표현
+  if (worryKeywords.some(keyword => msg.includes(keyword))) {
+    return 'worry';
+  }
+
+  // AI가 놀람 표현
+  if (surprisedKeywords.some(keyword => msg.includes(keyword))) {
+    return 'surprised';
+  }
+
+  // 신남/흥분 감정 (추천할 때 등)
+  const aiExcitedKeywords = ['어때', '가볼래', '가자'];
+  if (stage === 'recommendation' || aiExcitedKeywords.some(keyword => msg.includes(keyword))) {
+    return 'excited';
+  }
+
+  // 생각중 감정 (질문에 답하는 중)
+  if (msg.includes('?') || msg.includes('뭐') || msg.includes('어떤')) {
+    return 'thinking';
+  }
+
+  // 기쁨 감정 (기본 긍정)
+  const happyKeywords = ['좋', '감사', '고마워', '반가', '안녕', '즐거', '행복'];
+  if (happyKeywords.some(keyword => msg.includes(keyword))) {
+    return 'happy';
+  }
+
+  // 3단계: 기본 단계별 감정
+  if (stage === 'greeting') return 'happy';
+  if (stage === 'preference') return 'thinking';
+  if (stage === 'recommendation') return 'excited';
+  if (stage === 'enroute') return 'thinking';
+  if (stage === 'arrived') return 'happy';
+
+  return 'happy'; // 기본값
+}
+
 // 사용자 메시지에서 키워드 분석(간단 스코어링)
 function analyzeUserPreference(message) {
   const lowerMessage = (message || '').toLowerCase();
+
+  // 먼저 대안 매핑 체크 (바다, 등산 등)
+  for (const [keyword, spotKey] of Object.entries(ALTERNATIVE_MAPPING)) {
+    if (lowerMessage.includes(keyword)) {
+      return spotKey;
+    }
+  }
+
+  // 기존 키워드 분석
   const scores = { dongseongro: 0, dalseong: 0, suseongmot: 0 };
   Object.keys(DAEGU_SPOTS).forEach((spotKey) => {
     const spot = DAEGU_SPOTS[spotKey];
@@ -115,10 +318,10 @@ function ensureNameGreeting(text, userName = '') {
 function buildSmallTalkMessage(userName = '', { greet = false } = {}) {
   const nameCue = userName ? `${userName}, ` : '';
   if (greet) {
-    const base = `대구-대구야. 오늘 대구 날씨 완전 좋다~ ${nameCue}지금 기분은 힐링 여행? 아니면 신나는 코스가 끌려?`;
+    const base = `나는 대구-대구야! ${nameCue}오늘 뭐 하고 싶어?`;
     return ensureNameGreeting(base, userName);
   }
-  return `대구-대구가 ${nameCue}어떤 분위기를 찾는지 궁금해! 힐링 여행? 아니면 신나는 코스가 끌려?`;
+  return `${nameCue}오늘 기분이 어때? 뭐 하고 싶어?`;
 }
 
 function ensureRecommendationCallout(text, session, userName = '') {
@@ -131,13 +334,11 @@ function ensureRecommendationCallout(text, session, userName = '') {
     return text;
   }
   const nameCue = userName ? `${userName}, ` : '';
-  const highlight = summarizeList(spot.highlights, 1);
-  const food = summarizeList(spot.food, 1);
   const phrases = [
-    `${nameCue}${spot.name} 한 번 가볼래? ${spot.description} 느낌이야.`,
-    highlight ? `${nameCue}${spot.name} 가면 ${highlight}부터 둘러볼 수 있어.` : null,
-    food ? `${nameCue}${spot.name}에서 ${food}도 챙겨보자.` : null,
-  ].filter(Boolean);
+    `${nameCue}${spot.name} 한 번 가볼래?`,
+    `${nameCue}${spot.name} 어때?`,
+    `${spot.name}로 가보자!`,
+  ];
   const addition = pickRandom(phrases);
   if (!addition) return text;
   return text ? `${text}\n\n${addition}` : addition;
@@ -247,6 +448,7 @@ function getOrCreateSession(sessionId, initialName = '') {
       createdAt: new Date(),
       userName: trimmedName || null,
       lastSuggestionIndex: -1,
+      conversationTurns: 0, // 대화 턴 수 추적
     });
   }
   const session = conversationSessions.get(sessionId);
@@ -277,6 +479,19 @@ async function chatWithDaegu(userMessage, sessionId = 'default', userName = '') 
       return { success: true, message: '대화가 이미 종료되었어. 다음에 다시 만나자!', sessionId, stage: session.stage, terminated: true, endCut: true };
     }
 
+    // 무의미한 입력 검증
+    const inputValidation = validateUserInput(userMessage);
+    if (!inputValidation.valid) {
+      const response = getInvalidInputResponse();
+      return {
+        success: true,
+        message: response,
+        sessionId,
+        stage: session.stage,
+        invalidInput: true
+      };
+    }
+
     // 욕설/부적절 언어(치명도 낮음) — 세션 종료
     if (SAFETY_ENABLED && policy.contains_profanity(userMessage)) {
       resetSession(sessionId);
@@ -286,23 +501,49 @@ async function chatWithDaegu(userMessage, sessionId = 'default', userName = '') 
     // 사용자 메시지를 세션에 저장
     session.messages.push({ role: 'user', content: userMessage, timestamp: new Date() });
 
+    // 대화 턴 수 증가 (도착 전에만)
+    if (session.stage !== 'arrived') {
+      session.conversationTurns = (session.conversationTurns || 0) + 1;
+    }
+
     const normalizedUserMessage = (userMessage || '').toLowerCase();
     const wantsDifferent = CHANGE_SPOT_REGEX.test(normalizedUserMessage);
 
-    // 간단 취향 분석으로 추천 후보 결정 (명확할 때만)
+    // 추천 거부 감지 (관심 없음, 새로운 대화 시작)
+    const rejectPattern = /(아니|싫어|안\s?갈|관심\s?없|다른\s?얘기|아무거나|모르겠)/i;
+    const wantsReject = rejectPattern.test(normalizedUserMessage);
+
+    const canRecommend = session.conversationTurns >= 3; // 3-4턴 정도면 추천 가능
+
+    // 디버깅 로그
+    console.log(`[DEBUG] 턴 수: ${session.conversationTurns}, canRecommend: ${canRecommend}, stage: ${session.stage}`);
+
+    // "다른 곳" 요청 또는 추천 거부 시 stage를 preference로 리셋 (다시 추천 받을 수 있게)
+    if ((wantsDifferent || wantsReject) && session.stage === 'recommendation' && !session.currentLocation) {
+      console.log('[DEBUG] 사용자가 다른 곳 요청/추천 거부 → preference로 리셋');
+      session.stage = 'preference';
+      session.conversationTurns = 2; // 2턴 대화 후 다시 추천
+      session.recommendedSpot = null; // 이전 추천 초기화
+    }
+
+    // 간단 취향 분석으로 추천 후보 결정 (충분한 대화 후에만)
     const prefKey = analyzeUserPreference(userMessage);
-    if (prefKey && !session.currentLocation) {
+    if (canRecommend && prefKey && !session.currentLocation) {
       session.recommendedSpot = prefKey; // 'dongseongro' | 'dalseong' | 'suseongmot'
     }
 
     if (
+      canRecommend &&
       !session.currentLocation &&
       (!session.recommendedSpot || wantsDifferent)
     ) {
       session.recommendedSpot = resolveFallbackSpot(session, userMessage, wantsDifferent);
     }
-    if (session.stage === 'preference' && session.recommendedSpot) {
+
+    // preference 또는 recommendation 상태에서 추천 스팟이 있으면 recommendation으로 전환/유지
+    if (canRecommend && (session.stage === 'preference' || session.stage === 'recommendation') && session.recommendedSpot) {
       session.stage = 'recommendation';
+      console.log(`[DEBUG] recommendation 상태로 전환/유지, 추천 스팟: ${session.recommendedSpot}`);
     }
 
     const userIntentGo = POSITIVE_INTENT_REGEX.test(userMessage);
@@ -341,28 +582,44 @@ async function chatWithDaegu(userMessage, sessionId = 'default', userName = '') 
       systemMessage = `${systemMessage}\n\n${safetyHeader}`;
     }
 
-    const effectiveUserName = (session.userName || userName || '').trim();
-    if (effectiveUserName) {
-      systemMessage += `\n\n[이름 호칭 규칙]\n- 사용자를 "${effectiveUserName}"(이)라고 부르기\n- 첫 응답은 반드시 ${effectiveUserName}에게 인사하며 이름을 불러주고, 간단한 안부 후 여행 취향을 물어보기\n- 이후에도 두세 턴에 한 번씩 자연스럽게 ${effectiveUserName} 이름을 언급하기`;
+    // 이름 관련 코드 제거 - 사용자 이름 묻지 않고 언급하지 않음
+
+    // 대화 턴 수에 따른 규칙 (더 유연하게)
+    const conversationTurns = session.conversationTurns || 0;
+    if (conversationTurns < 3) {
+      // 초반 대화: 자연스럽게 취향 파악
+      systemMessage += `\n\n[초반 대화 - 현재 ${conversationTurns}턴]\n- 자연스럽게 대화하면서 취향 파악\n- "쇼핑 좋아해?", "조용한 곳 좋아해?" 같은 질문으로 취향 알아보기\n- 1-2문장으로 짧게 대화\n- 아직 구체적인 장소 추천은 하지 말기`;
+    } else if (session.stage === 'preference' || session.stage === 'greeting') {
+      // 충분한 대화 후: 추천 준비
+      const recommendedSpot = session.recommendedSpot ? DAEGU_SPOTS[session.recommendedSpot] : null;
+      if (recommendedSpot) {
+        systemMessage += `\n\n[장소 추천하기 - 충분히 파악됨]\n- ${recommendedSpot.name} 추천하기\n- "이런 거 어때?" 식으로 부담 없이 제안\n- 장소의 매력 포인트 1-2가지 간결하게 설명\n- 예: "${recommendedSpot.name} 가볼래? 거기 분위기 좋아!"`;
+      } else {
+        systemMessage += `\n\n[장소 추천하기]\n- 대화 내용 바탕으로 딱 한 곳만 추천\n- 동성로(쇼핑/맛집), 달성공원(자연/힐링), 수성못(경치/카페) 중 선택\n- 왜 어울릴지 이유와 함께 자연스럽게 제안`;
+      }
+    } else if (session.stage === 'recommendation') {
+      // 추천 단계: 추천된 장소 어필
+      const recommendedSpot = session.recommendedSpot ? DAEGU_SPOTS[session.recommendedSpot] : null;
+      if (recommendedSpot) {
+        systemMessage += `\n\n[${recommendedSpot.name} 추천 중]\n- ${recommendedSpot.name}의 좋은 점 자연스럽게 설명\n- "거기 가면 이런 게 좋아" 식으로 구체적으로\n- 1-2문장으로 간결하게 어필`;
+      }
+    } else if (session.stage === 'enroute') {
+      // 이동 중: 기대감 높이기
+      const recommendedSpot = session.recommendedSpot ? DAEGU_SPOTS[session.recommendedSpot] : null;
+      if (recommendedSpot) {
+        systemMessage += `\n\n[${recommendedSpot.name} 가는 중]\n- 도착 기대감 높이기\n- "거기 가면 이것저것 해보자!" 같은 톤\n- 자연스럽게 대화`;
+      }
     }
 
-    if (SAFETY_ENABLED && session.stage === 'greeting') {
-      const preferenceLabel = effectiveUserName ? `${effectiveUserName}의` : '사용자의';
-      systemMessage += `\n\n[초기 스몰토크]\n- 첫 응답은 대구-대구가 자신을 소개하고 분위기를 전하는 가벼운 Small talk로 시작하기\n- 첫 응답에서는 명소 이름이나 추천을 바로 언급하지 말고 ${preferenceLabel} 여행 취향과 기분을 먼저 물어보기\n- ${preferenceLabel} 취향을 들은 뒤 다음 턴에 어울리는 장소를 추천하기`;
-    }
-
-    // 도착 컨텍스트 보강
+    // 도착 컨텍스트
     if (SAFETY_ENABLED && session.stage === 'arrived' && session.currentLocation) {
       const spot = DAEGU_SPOTS[session.currentLocation];
-      systemMessage += `\n\n현재 위치: ${spot.name} (도착)\n규칙:\n- 다른 장소로 이동 제안/수락 금지 (현재 장소 먼저 권유)\n- ${spot.name} 내부 즐길거리, 동선, 맛집, 사진스팟, 소요시간 위주로 대화 유지\n- 대구 전체나 타지역 전반의 정보 제공 금지 (현재 위치에 한정)\n- 현재 위치와 무관한 주제는 부드럽게 현재 장소 이야기로 되돌리기\n- 간단한 선택지(예: 산책 코스/맛집/포토스팟)를 제안\n- 실제 상호명(가게 이름)은 언급하지 말고, 상권/부근으로 안내`;
+      systemMessage += `\n\n현재 위치: ${spot.name}\n- ${spot.name}에서 뭐 할지 자연스럽게 제안\n- 구체적인 가게 이름 대신 "이 근처", "메인 거리", "골목" 같은 표현 사용\n- 1-2문장으로 간결하게 설명`;
     }
 
-    // 음식 관련 질의: 상권 중심으로 안내
+    // 음식 관련 질문
     if (SAFETY_ENABLED && policy.isFoodQuery(userMessage)) {
-      const currentKey = session.currentLocation || session.recommendedSpot;
-      const spot = currentKey ? DAEGU_SPOTS[currentKey] : null;
-      const areaHints = spot?.foodAreas?.length ? `예: ${spot.foodAreas.join(', ')}` : '예: 메인 거리 주변, 역 근처, 골목 상권';
-      systemMessage += `\n\n[맛집/음식 가이드]\n- 실제 매장 이름은 말하지 말 것\n- 상권/부근 위주로 안내 (거리, 골목, 역 주변 등)\n- 한두 문장으로 간결히 안내하고, 필요시 사용자의 취향(매운맛/가성비/분위기) 재질문\n- 참고 힌트: ${areaHints}`;
+      systemMessage += `\n\n[맛집 안내]\n- 구체적인 가게 이름 대신 "메인 거리 쪽", "골목 안" 같은 위치로 안내\n- "매운 거 좋아?" 같은 취향 물어보기도 좋음`;
     }
 
     // OpenAI API 호출
@@ -381,8 +638,8 @@ async function chatWithDaegu(userMessage, sessionId = 'default', userName = '') 
         const completion = await client.chat.completions.create({
           model: 'gpt-3.5-turbo',
           messages,
-          max_tokens: 250,
-          temperature: 0.8,
+          max_tokens: 120, // 1-2문장으로 짧고 정확하게 (헛소리 방지)
+          temperature: 0.85, // 자연스럽고 일관된 응답
         });
         completionUsage = completion.usage;
         aiMessage = completion.choices?.[0]?.message?.content || '';
@@ -396,6 +653,7 @@ async function chatWithDaegu(userMessage, sessionId = 'default', userName = '') 
 
     if (fallbackUsed || !aiMessage) {
       const fallback = generateFallbackResponse();
+      const effectiveUserName = (session.userName || userName || '').trim();
       aiMessage =
         fallback?.message ||
         buildSmallTalkMessage(effectiveUserName, { greet: session.stage === 'greeting' });
@@ -407,7 +665,23 @@ async function chatWithDaegu(userMessage, sessionId = 'default', userName = '') 
       aiMessage = policy.enforceOutput({ text: aiMessage, session, spots: DAEGU_SPOTS });
     }
 
+    // 장소명 필터링 (초반에만 적용, 더 유연하게)
+    const currentTurns = session.conversationTurns || 0;
+    if (session.stage !== 'arrived' && session.stage !== 'enroute' && session.stage !== 'recommendation') {
+      const allSpotNames = ['동성로', '달성공원', '수성못'];
+
+      if (currentTurns < 3) {
+        // 3턴 미만: 모든 장소명 제거 (초반에만)
+        allSpotNames.forEach(spotName => {
+          const regex = new RegExp(spotName, 'gi');
+          aiMessage = aiMessage.replace(regex, '그곳');
+        });
+      }
+      // 3턴 이상이고 추천 단계면 장소명 그대로 유지
+    }
+
     // 첫 대화(도착 전): 3곳 외 언급 방지 (안전 모드에서만 실행)
+    const effectiveUserName = (session.userName || userName || '').trim();
     if (SAFETY_ENABLED && session.stage !== 'arrived') {
       const sanitizeStage = session.stage;
       const recommendedKey = session.recommendedSpot || null;
@@ -415,7 +689,10 @@ async function chatWithDaegu(userMessage, sessionId = 'default', userName = '') 
       aiMessage = sanitizeFirstChatResponse(aiMessage, effectiveUserName, { stage: sanitizeStage, hasRecommendation, recommendedKey });
     }
 
-    aiMessage = ensureRecommendationCallout(aiMessage, session, effectiveUserName);
+    // 추천 단계일 때만 추천 문구 추가 (대화 중에는 추가하지 않음)
+    if (currentTurns >= 3 && session.stage === 'recommendation') {
+      aiMessage = ensureRecommendationCallout(aiMessage, session, effectiveUserName);
+    }
 
     // 과도한 주제 필터링 제거: 대화 흐름 방해 방지
 
@@ -431,28 +708,32 @@ async function chatWithDaegu(userMessage, sessionId = 'default', userName = '') 
       policy.log_event(userMessage, aiMessage, 'policy_check');
     }
 
+    // 감정 분석
+    const emotion = analyzeEmotion(aiMessage, session.stage, userMessage);
+
+    // 디버깅 로그
+    console.log(`[감정 분석] 사용자: "${userMessage}" | AI: "${aiMessage}" | 감정: ${emotion}`);
+
     // 응답 구성
     const result = {
       success: true,
       message: aiMessage,
       sessionId,
       stage: session.stage,
+      emotion: emotion, // 감정 정보 추가
       usage: completionUsage,
       terminated: session.terminated === true,
       strikes: session.strikeCount,
       fallback: fallbackUsed,
     };
 
-    // 명소 추천이 있으면 부가 정보 포함
-    if (session.recommendedSpot) {
+    // 명소 추천이 있고, 5턴 이상이고, stage가 recommendation일 때만 부가 정보 포함
+    if (session.recommendedSpot && currentTurns >= 5 && session.stage === 'recommendation') {
       const spot = DAEGU_SPOTS[session.recommendedSpot];
       result.recommendation = {
         spot: session.recommendedSpot,
         name: spot.name,
-        description: spot.description,
-        transport: spot.transport,
-        highlights: spot.highlights,
-        food: spot.food,
+        keywords: spot.keywords,
       };
     }
 
@@ -482,7 +763,10 @@ async function chatWithDaegu(userMessage, sessionId = 'default', userName = '') 
         });
       }
     }
-    fallbackMessage = ensureRecommendationCallout(fallbackMessage, safeSession, effectiveName);
+    // 추천 단계일 때만 추천 문구 추가
+    if (safeSession.stage === 'recommendation' && (safeSession.conversationTurns || 0) >= 5) {
+      fallbackMessage = ensureRecommendationCallout(fallbackMessage, safeSession, effectiveName);
+    }
     safeSession.messages.push({
       role: 'assistant',
       content: fallbackMessage,
@@ -491,11 +775,16 @@ async function chatWithDaegu(userMessage, sessionId = 'default', userName = '') 
     if (SAFETY_ENABLED) {
       policy.log_event(userMessage, fallbackMessage, 'policy_fallback');
     }
+
+    // 에러 상황에서도 감정 분석
+    const fallbackEmotion = analyzeEmotion(fallbackMessage, safeSession.stage, userMessage);
+
     return {
       success: true,
       message: fallbackMessage,
       sessionId,
       stage: safeSession.stage,
+      emotion: fallbackEmotion, // 감정 정보 추가
       usage: null,
       terminated: safeSession.terminated === true,
       strikes: safeSession.strikeCount,

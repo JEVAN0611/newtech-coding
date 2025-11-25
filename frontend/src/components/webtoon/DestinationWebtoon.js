@@ -11,11 +11,31 @@ function DestinationWebtoon({ spot, onComplete }) {
   };
   const sequences = useMemo(() => ({
     '동성로': [
-      { image: null, emoji: '🚇', text: '중앙로역에서 내렸어! 동성로 입구 앞이야.' },
-      { image: null, emoji: '🛍️', text: '양쪽으로 상점이 쫙~ 쇼핑 천국이지!' },
-      { image: null, emoji: '🍜', text: '골목 맛집들 냄새가 벌써 유혹하네!' },
-      { image: null, emoji: '🎵', text: '버스킹 소리 들려? 분위기 점점 업된다!' },
-      { image: null, emoji: '✨', text: '좋아, 이제 본격 탐험 시작하자!' }
+      {
+        image: withCacheBust('뉴테크 동성로1.png'),
+        emoji: '🚇',
+        text: '중앙로역에서 내렸어! 동성로 입구 앞이야.'
+      },
+      {
+        image: withCacheBust('뉴테크 동성로2.png'),
+        emoji: '🛍️',
+        text: '양쪽으로 상점이 쫙~ 쇼핑 천국이지!'
+      },
+      {
+        image: withCacheBust('뉴테크 동성로3.png'),
+        emoji: '🍜',
+        text: '골목 맛집들 냄새가 벌써 유혹하네!'
+      },
+      {
+        image: withCacheBust('뉴테크 동성로4.png'),
+        emoji: '🎵',
+        text: '버스킹 소리 들려? 분위기 점점 업된다!'
+      },
+      {
+        image: withCacheBust('뉴테크 동성로5.png'),
+        emoji: '✨',
+        text: '좋아, 이제 본격 탐험 시작하자!'
+      }
     ],
     '달성공원': [
       {
@@ -30,21 +50,73 @@ function DestinationWebtoon({ spot, onComplete }) {
         emoji: '🌳',
         text: '나무 그늘 아래 산책로, 공기부터 다르다~'
       },
-      { image: null, emoji: '🐾', text: '작은 동물원도 들러볼까? 귀여움 과다 주의!' },
-      { image: null, emoji: '🏛️', text: '향토역사관 한 바퀴, 대구의 옛 이야기.' },
-      { image: null, emoji: '☕', text: '근처 카페로 슬슬 이동해볼까?' }
+      {
+        image: withCacheBust('뉴테크 달성공원3.png'),
+        emoji: '🐾',
+        text: '작은 동물원도 들러볼까? 귀여움 과다 주의!'
+      },
+      {
+        image: withCacheBust('뉴테크 달성공원4.png'),
+        emoji: '🏛️',
+        text: '향토역사관 한 바퀴, 대구의 옛 이야기.'
+      },
+      {
+        image: withCacheBust('뉴테크 달성공원5.png'),
+        emoji: '☕',
+        text: '근처 카페로 슬슬 이동해볼까?'
+      }
     ],
     '수성못': [
-      { image: null, emoji: '🚇', text: '수성못역에서 나와서 호수로 쭉!' },
-      { image: null, emoji: '🌅', text: '물결 반짝~ 산책하기 딱 좋은 바람.' },
-      { image: null, emoji: '🛶', text: '보트 타는 사람들 보이네? 재밌겠다!' },
-      { image: null, emoji: '📸', text: '뷰 맛집 포인트에서 한 컷 찰칵!' },
-      { image: null, emoji: '🌌', text: '야경 시작! 카페거리로 가서 쉬자.' }
+      {
+        image: withCacheBust('뉴테크 수성못1.png'),
+        emoji: '🚇',
+        text: '수성못역에서 나와서 호수로 쭉!'
+      },
+      {
+        image: withCacheBust('뉴테크 수성못2.png'),
+        emoji: '🌅',
+        text: '물결 반짝~ 산책하기 딱 좋은 바람.'
+      },
+      {
+        image: withCacheBust('뉴테크 수성못3.png'),
+        emoji: '🛶',
+        text: '보트 타는 사람들 보이네? 재밌겠다!'
+      },
+      {
+        image: withCacheBust('뉴테크 수성못4.png'),
+        emoji: '📸',
+        text: '뷰 맛집 포인트에서 한 컷 찰칵!'
+      },
+      {
+        image: withCacheBust('뉴테크 수성못5.png'),
+        emoji: '🌌',
+        text: '야경 시작! 카페거리로 가서 쉬자.'
+      }
+    ],
+    '엔딩': [
+      {
+        image: withCacheBust('뉴테크 엔딩1.png'),
+        fallback: withCacheBust('ending-1.png'),
+        emoji: '🌆',
+        text: '오늘 대구 여행 어땠어?'
+      },
+      {
+        image: withCacheBust('뉴테크 엔딩2.png'),
+        fallback: withCacheBust('ending-2.png'),
+        emoji: '💭',
+        text: '함께해서 정말 즐거웠어!'
+      },
+      {
+        image: withCacheBust('뉴테크 엔딩3.png'),
+        fallback: withCacheBust('ending-3.png'),
+        emoji: '✨',
+        text: '안녕~ 또 보자!'
+      }
     ]
   }), [basePath, cacheBuster]);
 
   const panels = sequences[spot] || [];
-  const [visiblePanels, setVisiblePanels] = useState([]);
+  const [visiblePanels, setVisiblePanels] = useState([0]); // 첫 번째 패널 즉시 표시
   const completedRef = useRef(false);
 
   useEffect(() => {
@@ -64,9 +136,33 @@ function DestinationWebtoon({ spot, onComplete }) {
     };
 
     window.addEventListener('scroll', handleScroll);
-    handleScroll();
-    return () => window.removeEventListener('scroll', handleScroll);
+    // DOM 렌더링 및 스크롤 완료 후 visibility 체크
+    const timeoutId = setTimeout(handleScroll, 300);
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      clearTimeout(timeoutId);
+    };
   }, [visiblePanels]);
+
+  // 패널들을 순차적으로 자동 표시 (스크롤 없이도 작동)
+  useEffect(() => {
+    const timeouts = [];
+    panels.forEach((_, idx) => {
+      const timeout = setTimeout(() => {
+        setVisiblePanels(prev => {
+          if (!prev.includes(idx)) {
+            return [...prev, idx];
+          }
+          return prev;
+        });
+      }, idx * 600); // 각 패널을 0.6초 간격으로 표시
+      timeouts.push(timeout);
+    });
+
+    return () => {
+      timeouts.forEach(t => clearTimeout(t));
+    };
+  }, [panels.length]);
 
   useEffect(() => {
     if (!completedRef.current && panels.length > 0 && visiblePanels.length >= panels.length) {
@@ -78,34 +174,42 @@ function DestinationWebtoon({ spot, onComplete }) {
   if (!panels.length) return null;
 
   return (
-    <div style={{ maxWidth: '100%', margin: '0 auto', padding: '0' }}>
+    <div style={{
+      width: '100%',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center'
+    }}>
       {panels.map((panel, index) => (
         <div
           key={`${spot}-${index}`}
           className="dest-webtoon-panel"
           style={{
-            margin: '50px 0',
-            minHeight: '420px',
+            margin: '25px 0',
+            width: '600px',
+            height: '400px',
             opacity: visiblePanels.includes(index) ? 1 : 0,
             transform: visiblePanels.includes(index) ? 'translateY(0)' : 'translateY(50px)',
             transition: 'all 0.8s ease-in-out',
-            border: '3px solid #333',
+            border: '6px solid #333',
             borderRadius: '10px',
-            backgroundColor: '#f9f9f9',
+            backgroundColor: '#ffffff',
             display: 'flex',
             flexDirection: 'column',
             position: 'relative',
-            boxShadow: '0 4px 15px rgba(0,0,0,0.1)'
+            boxShadow: '0 4px 15px rgba(0,0,0,0.1)',
+            overflow: 'hidden',
+            boxSizing: 'border-box'
           }}
         >
           <div
             style={{
               width: '100%',
-              height: '420px',
+              height: '100%',
               borderRadius: '7px',
               position: 'relative',
               overflow: 'hidden',
-              backgroundColor: panel.image ? '#000' : '#f9f9f9'
+              backgroundColor: '#ffffff'
             }}
           >
             {panel.image ? (
@@ -123,19 +227,10 @@ function DestinationWebtoon({ spot, onComplete }) {
                   style={{
                     width: '100%',
                     height: '100%',
-                    objectFit: 'cover'
+                    objectFit: 'cover',
+                    display: 'block'
                   }}
                 />
-                <div style={{
-                  position: 'absolute',
-                  bottom: 10,
-                  right: 12,
-                  color: 'rgba(255,255,255,0.9)',
-                  fontSize: '12px',
-                  textShadow: '0 1px 3px rgba(0,0,0,0.6)'
-                }}>
-                  컷 {index + 1}/{panels.length}
-                </div>
               </>
             ) : (
               <div style={{
@@ -148,7 +243,7 @@ function DestinationWebtoon({ spot, onComplete }) {
                 flexDirection: 'column',
                 alignItems: 'center',
                 justifyContent: 'center',
-                backgroundColor: 'rgba(255,255,255,0.92)'
+                backgroundColor: '#ffffff'
               }}>
                 <div style={{ fontSize: '56px', marginBottom: '14px' }}>{panel.emoji}</div>
                 <p style={{
@@ -161,15 +256,6 @@ function DestinationWebtoon({ spot, onComplete }) {
                 }}>
                   {panel.text}
                 </p>
-                <div style={{
-                  position: 'absolute',
-                  bottom: 10,
-                  right: 12,
-                  color: '#999',
-                  fontSize: '12px'
-                }}>
-                  컷 {index + 1}/{panels.length}
-                </div>
               </div>
             )}
           </div>
