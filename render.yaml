@@ -21,12 +21,12 @@ services:
 
   - type: web
     name: daegu-webtoon-frontend
-    env: node
+    env: static
     region: oregon
     plan: free
     rootDir: frontend
     buildCommand: npm install && npm run build
-    startCommand: npx serve -s build -p $PORT
+    staticPublishPath: ./build
     envVars:
       - key: NODE_ENV
         value: production
