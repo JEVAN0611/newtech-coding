@@ -13,7 +13,7 @@ function ScrollWebtoon() {
       panels.forEach((panel, index) => {
         const rect = panel.getBoundingClientRect();
         const isVisible = rect.top < window.innerHeight && rect.bottom > 0;
-        
+
         if (isVisible && !visiblePanels.includes(index)) {
           newVisiblePanels.push(index);
         }
@@ -31,14 +31,14 @@ function ScrollWebtoon() {
   }, [visiblePanels]);
 
   const panels = [
-    { id: 1, image: '/assets/images/webtoon/뉴테크 메인0.jpg', alt: '대구역 풍경 — 시작!' },
-    { id: 2, image: '/assets/images/webtoon/뉴테크 메인1.jpg', alt: '대구-대구 등장!' },
-    { id: 3, image: '/assets/images/webtoon/뉴테크 메인2.jpg', alt: '반가워! 오늘 뭐 하고 싶어?' },
-    { id: 4, image: '/assets/images/webtoon/뉴테크 메인3.jpg', alt: '동성로/달성공원/수성못 중 골라봐!' },
-    { id: 5, image: '/assets/images/webtoon/뉴테크 메인4.jpg', alt: '취향대로 추천해줄게' },
-    { id: 6, image: '/assets/images/webtoon/뉴테크 메인5.jpg', alt: '가볍게 둘러보고 결정하자' },
-    { id: 7, image: '/assets/images/webtoon/뉴테크 메인6.jpg', alt: '대구-대구가 안내해줄게' },
-    { id: 8, image: '/assets/images/webtoon/뉴테크 메인7.jpg', alt: '이제 아래서 대화 시작!' },
+    { id: 1, image: '/assets/images/webtoon/main-0.jpg', alt: '대구역 풍경 — 시작!' },
+    { id: 2, image: '/assets/images/webtoon/main-1.jpg', alt: '대구-대구 등장!' },
+    { id: 3, image: '/assets/images/webtoon/main-2.jpg', alt: '반가워! 오늘 뭐 하고 싶어?' },
+    { id: 4, image: '/assets/images/webtoon/main-3.jpg', alt: '동성로/달성공원/수성못 중 골라봐!' },
+    { id: 5, image: '/assets/images/webtoon/main-4.jpg', alt: '취향대로 추천해줄게' },
+    { id: 6, image: '/assets/images/webtoon/main-5.jpg', alt: '가볍게 둘러보고 결정하자' },
+    { id: 7, image: '/assets/images/webtoon/main-6.jpg', alt: '대구-대구가 안내해줄게' },
+    { id: 8, image: '/assets/images/webtoon/main-7.jpg', alt: '이제 아래서 대화 시작!' },
   ];
 
   return (
@@ -58,8 +58,8 @@ function ScrollWebtoon() {
             width: '100%',
             boxSizing: 'border-box',
             opacity: visiblePanels.includes(index) ? 1 : 0,
-            transform: visiblePanels.includes(index) 
-              ? 'translateY(0)' 
+            transform: visiblePanels.includes(index)
+              ? 'translateY(0)'
               : 'translateY(50px)',
             transition: 'all 0.8s ease-in-out',
             border: '3px solid #333',
