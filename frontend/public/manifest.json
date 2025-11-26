@@ -1,6 +1,7 @@
 {
-  "short_name": "React App",
-  "name": "Create React App Sample",
+  "short_name": "대구 여행",
+  "name": "대구 여행 가이드 - 대구-대구와 함께",
+  "description": "대구-대구 캐릭터와 함께하는 인터랙티브 대구 여행 가이드",
   "icons": [
     {
       "src": "favicon.ico",
@@ -20,6 +21,6 @@
   ],
   "start_url": ".",
   "display": "standalone",
-  "theme_color": "#000000",
+  "theme_color": "#4A90E2",
   "background_color": "#ffffff"
 }
