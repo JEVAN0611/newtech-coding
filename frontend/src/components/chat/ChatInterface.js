@@ -383,9 +383,9 @@ function ChatInterface({ onNameSubmit }) {
     setGifRefreshKey(Date.now());
   };
   const VIDEO_MAP = {
-    동성로: { type: "id", value: "tsWdV0JfI6w" },
-    수성못: { type: "id", value: "PBqH8Ql299Q" },
-    달성공원: { type: "id", value: "eCA0qAFXdKk" },
+    동성로: { type: "id", value: "26Z6UMgLfTE" },
+    수성못: { type: "id", value: "lhXAjYt43Bo" },
+    달성공원: { type: "id", value: "lzt-qom5RAU" },
   };
 
   const SPOT_NAMES = ["동성로", "달성공원", "수성못"];
