@@ -10,6 +10,8 @@ async function fetchAPI(endpoint, options = {}) {
     headers: {
       'Content-Type': 'application/json',
     },
+    // Cold start를 고려한 타임아웃 설정 (60초)
+    signal: AbortSignal.timeout(60000),
   };
 
   try {
@@ -25,6 +27,29 @@ async function fetchAPI(endpoint, options = {}) {
     console.error(`API 호출 실패 [${endpoint}]:`, error);
     throw error;
   }
+}
+
+/**
+ * 서버 상태 확인 (Health Check)
+ */
+export async function checkServerHealth() {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/health`, {
+      signal: AbortSignal.timeout(60000),
+    });
+    return response.ok;
+  } catch (error) {
+    console.error('서버 상태 확인 실패:', error);
+    return false;
+  }
+}
+
+/**
+ * 서버 Pre-warming (앱 시작 시 호출)
+ */
+export async function warmUpServer() {
+  console.log('🔥 서버 warming up...');
+  return checkServerHealth();
 }
 
 /**

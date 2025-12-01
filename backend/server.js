@@ -88,6 +88,15 @@ app.get("/api/test", (req, res) => {
   });
 });
 
+// Health Check 엔드포인트 (Keep-alive용)
+app.get("/api/health", (req, res) => {
+  res.status(200).json({
+    status: "healthy",
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime()
+  });
+});
+
 // 404 에러 핸들러
 app.use((req, res) => {
   res.status(404).json({
