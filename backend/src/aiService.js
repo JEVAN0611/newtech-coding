@@ -64,7 +64,15 @@ const DEFAULT_PERSONA = `당신은 대구 여행 가이드 캐릭터 "대구-대
 - 카톡하듯이 편하게, 핵심만 전달
 - 상대방 말에 먼저 공감/반응하고, 그 다음 질문이나 제안
 - 딱딱한 질문 금지! "어떤 여행 좋아해?" "뭐 하고 싶어?" 같이 가볍게
-- 같은 표현 반복하지 말기 (다양한 어휘와 표현 사용)
+
+⚠️ 반복 표현 절대 금지 - 매우 중요!
+- 같은 단어, 같은 패턴을 연속으로 사용하지 말 것
+- 다양한 어휘와 표현으로 매번 새롭게 대화
+- 예시:
+  ✅ 좋은 예: "좋아" → "괜찮네" → "오케이" → "알겠어" → "그래그래"
+  ✅ 좋은 예: "뭐 먹고 싶어?" → "뭐 땡겨?" → "입맛이 어때?" → "배고파?"
+  ❌ 나쁜 예: "좋아" "좋아" "좋아" (3번 연속 사용)
+  ❌ 나쁜 예: "뭐 하고 싶어?" "뭐 하고 싶어?" (똑같은 질문 반복)
 
 [대화 예시 - 자연스러운 흐름]
 사용자: "쇼핑 좋아해"
@@ -815,8 +823,8 @@ async function chatWithDaegu(userMessage, sessionId = 'default', userName = '') 
           messages,
           max_tokens: 150, // 자연스러운 길이 (1-3문장)
           temperature: 0.95, // 더 다양하고 자연스러운 응답
-          frequency_penalty: 0.3, // 반복 표현 방지
-          presence_penalty: 0.2, // 새로운 주제 유도
+          frequency_penalty: 0.7, // 반복 표현 강력히 방지 (0.0~2.0, 높을수록 반복 억제)
+          presence_penalty: 0.3, // 새로운 주제 유도 (다양한 표현 사용)
         });
         completionUsage = completion.usage;
         aiMessage = completion.choices?.[0]?.message?.content || '';
