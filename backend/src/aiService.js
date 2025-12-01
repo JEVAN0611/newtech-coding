@@ -103,10 +103,12 @@ const DEFAULT_PERSONA = `당신은 대구 여행 가이드 캐릭터 "대구-대
 - 유머러스하게 받아치고, 자연스럽게 여행 주제로 유도
 - 친구처럼 편하게 "ㅋㅋㅋ" 같은 리액션 활용
 
-예시:
-사용자: "맞짱뜰래?"
-→ "ㅋㅋㅋ 야 우리 여행 왔는데 왜 싸워ㅋㅋ 대신 맛집 가서 배터지게 먹을래?"
+⚠️ 중요: 뜬금없는 입력 3번 반복 시 시스템이 자동으로 대화 종료
+- 1-2번: 유머러스하게 받아치면서 여행으로 유도 (자동 처리됨)
+- 3번: 최종 경고 후 대화 종료 (자동 처리됨)
+- 정상 대화하면 카운터 자동 리셋
 
+예시 (정상 대응):
 사용자: "배고파 죽겠어"
 → "오 그럼 잘됐다! 여기 맛집 많거든? 뭐 먹고 싶어?"
 
@@ -461,6 +463,49 @@ function sanitizeFirstChatResponse(text, userName = '', { stage = 'preference', 
   return sanitized;
 }
 
+// 뜬금없는 입력 감지 (여행과 무관한 주제)
+function detectOffTopicInput(message) {
+  const lowerMsg = (message || '').toLowerCase();
+
+  // 여행 관련 키워드 (이게 있으면 정상)
+  const travelKeywords = [
+    '여행', '관광', '가고', '갈래', '보고', '볼래', '먹고', '먹을래', '쇼핑', '산책', '구경',
+    '맛집', '카페', '음식', '분위기', '사진', '경치', '힐링', '데이트', '놀', '즐기',
+    '추천', '어디', '뭐', '어떤', '좋아', '싫어', '아니', '다른', '바꿔',
+    '동성로', '달성공원', '수성못', '대구', '장소', '곳'
+  ];
+
+  // 뜬금없는/도발적인 키워드 (이게 있으면 비정상)
+  const offTopicKeywords = [
+    '맞짱', '싸우', '때리', '죽이', '개새', '시발', '병신', '븅신',
+    '정치', '대통령', '선거', '전쟁', '주식', '코인', '비트코인',
+    '섹스', '야동', '포르노', '19금'
+  ];
+
+  // 도발적 키워드가 있으면 뜬금없음
+  if (offTopicKeywords.some(keyword => lowerMsg.includes(keyword))) {
+    return true;
+  }
+
+  // 여행 키워드가 있으면 정상
+  if (travelKeywords.some(keyword => lowerMsg.includes(keyword))) {
+    return false;
+  }
+
+  // 너무 짧은 메시지는 판단 보류 (2글자 이하)
+  if (message.trim().length <= 2) {
+    return false;
+  }
+
+  // 질문이면 정상으로 간주
+  if (lowerMsg.includes('?') || lowerMsg.includes('뭐') || lowerMsg.includes('어디')) {
+    return false;
+  }
+
+  // 나머지는 일단 정상으로 간주 (너무 엄격하지 않게)
+  return false;
+}
+
 // 대화 컨텍스트 관리
 function getOrCreateSession(sessionId, initialName = '') {
   const trimmedName = (initialName || '').trim();
@@ -477,6 +522,7 @@ function getOrCreateSession(sessionId, initialName = '') {
       userName: trimmedName || null,
       lastSuggestionIndex: -1,
       conversationTurns: 0, // 대화 턴 수 추적
+      offTopicCount: 0, // 뜬금없는 입력 카운터
     });
   }
   const session = conversationSessions.get(sessionId);
@@ -518,6 +564,46 @@ async function chatWithDaegu(userMessage, sessionId = 'default', userName = '') 
         stage: session.stage,
         invalidInput: true
       };
+    }
+
+    // 뜬금없는 입력 감지 및 처리
+    const isOffTopic = detectOffTopicInput(userMessage);
+    if (isOffTopic) {
+      session.offTopicCount = (session.offTopicCount || 0) + 1;
+
+      if (session.offTopicCount === 1) {
+        // 1번째: 유머러스하게 받아치기
+        return {
+          success: true,
+          message: "ㅋㅋㅋ 야 우리 여행 이야기 하러 왔잖아! 대구에서 뭐 하고 싶어?",
+          sessionId,
+          stage: session.stage,
+          offTopicWarning: true
+        };
+      } else if (session.offTopicCount === 2) {
+        // 2번째: 경고
+        return {
+          success: true,
+          message: "야야 진지하게 여행 얘기 좀 하자ㅋㅋ 자꾸 이러면 나 가버린다? 😅",
+          sessionId,
+          stage: session.stage,
+          offTopicWarning: true
+        };
+      } else if (session.offTopicCount >= 3) {
+        // 3번째: 최종 경고 + 종료
+        session.terminated = true;
+        return {
+          success: true,
+          message: "야 진짜 안 되겠다. 여행할 마음 없으면 다음에 다시 보자! 👋",
+          sessionId,
+          stage: session.stage,
+          terminated: true,
+          endCut: true
+        };
+      }
+    } else {
+      // 정상 대화면 카운터 리셋
+      session.offTopicCount = 0;
     }
 
     // 욕설/부적절 언어(치명도 낮음) — 세션 종료
