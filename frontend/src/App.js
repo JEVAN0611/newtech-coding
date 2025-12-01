@@ -6,33 +6,23 @@ import { warmUpServer } from './services/api';
 
 function App() {
   const [isLoading, setIsLoading] = useState(true);
-  const [serverStatus, setServerStatus] = useState('warming');
 
-  // 앱 시작 시 서버 워밍업 (백그라운드에서 조용히 실행)
+  // 가짜 로딩 (1.8초 고정) - 사용자 경험용
+  useEffect(() => {
+    const timer = setTimeout(() => setIsLoading(false), 1800);
+    return () => clearTimeout(timer);
+  }, []);
+
+  // 서버 워밍업 (백그라운드에서 독립적으로 실행)
   useEffect(() => {
     const initServer = async () => {
-      console.log('🔥 서버 워밍업 시작...');
-
+      console.log('🔥 서버 워밍업 시작... (백그라운드)');
       const isHealthy = await warmUpServer();
-      setServerStatus(isHealthy ? 'ready' : 'error');
-
-      if (isHealthy) {
-        console.log('✅ 서버 준비 완료!');
-      } else {
-        console.log('❌ 서버 응답 없음');
-      }
+      console.log(isHealthy ? '✅ 서버 준비 완료!' : '❌ 서버 응답 없음');
     };
 
     initServer();
   }, []);
-
-  useEffect(() => {
-    // 서버가 준비되면 로딩 종료
-    if (serverStatus === 'ready') {
-      const timer = setTimeout(() => setIsLoading(false), 800);
-      return () => clearTimeout(timer);
-    }
-  }, [serverStatus]);
 
   useEffect(() => {
     if (isLoading) {
