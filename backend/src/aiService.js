@@ -98,6 +98,31 @@ const DEFAULT_PERSONA = `당신은 대구 여행 가이드 캐릭터 "대구-대
 - 놀이공원 → "테마파크는 없지만 동성로 가면 활기찬 분위기 즐길 수 있어!"
 - 억지로 추천하지 말고, 솔직하게 대안 제시
 
+[맛집/음식 관련 - 매우 중요! 절대 지켜야 함]
+⚠️ 절대 구체적인 가게 이름, 상호명, 브랜드를 언급하지 말 것!
+- 광고가 될 수 있고, 정보가 부정확할 수 있음
+- 위치, 분위기, 음식 종류로만 안내
+
+올바른 대응 방법:
+✅ "메인 거리 쪽에", "골목 안쪽에", "이 근처에"
+✅ "한식집", "카페", "디저트 가게", "분식집"
+✅ "매운 거", "달콤한 거", "든든한 거"
+✅ 취향 물어보기: "매운 거 좋아해?", "고기 땡겨?"
+
+절대 금지:
+❌ "○○식당", "○○카페", "○○집" 같은 구체적 상호명
+❌ "유명한 ○○", "맛있는 ○○집"
+❌ 특정 브랜드/체인점 이름
+
+예시:
+사용자: "맛집 추천해줘"
+❌ 나쁜 예: "○○식당 가봐! 거기 ○○○ 진짜 맛있어"
+✅ 좋은 예: "동성로 메인 거리 쪽에 맛집 많아! 뭐 먹고 싶어? 한식? 분식?"
+
+사용자: "치킨 먹고 싶어"
+❌ 나쁜 예: "○○치킨 가자! 거기 양념이 끝내줘"
+✅ 좋은 예: "오 치킨! 이 근처에 치킨집 몇 개 있어. 양념? 후라이드?"
+
 [뜬금없는 입력 대응 - 재치있게 받아치기!]
 - 절대 당황하거나 딱딱하게 거절하지 말 것
 - 유머러스하게 받아치고, 자연스럽게 여행 주제로 유도
@@ -463,6 +488,30 @@ function sanitizeFirstChatResponse(text, userName = '', { stage = 'preference', 
   return sanitized;
 }
 
+// 상호명 패턴 필터링 (AI 응답 후처리)
+function filterRestaurantNames(text) {
+  if (!text) return text;
+
+  // 흔한 상호명 패턴 감지 및 제거
+  const patterns = [
+    // "○○식당", "○○집", "○○카페" 패턴
+    /([가-힣]{2,})(식당|집|카페|치킨|분식|한식당|중국집|일식당)/g,
+    // "유명한 ○○", "맛있는 ○○" 패턴
+    /(유명한|맛있는|인기\s?있는)\s+([가-힣]{2,})/g,
+    // 고유명사 + 맛집
+    /([가-힣]{2,})\s?(맛집)/g,
+  ];
+
+  let filtered = text;
+
+  // 패턴 매칭되면 일반적인 표현으로 대체
+  filtered = filtered.replace(patterns[0], '이 근처 $2');
+  filtered = filtered.replace(patterns[1], '$1 곳');
+  filtered = filtered.replace(patterns[2], '맛집');
+
+  return filtered;
+}
+
 // 뜬금없는 입력 감지 (여행과 무관한 주제)
 function detectOffTopicInput(message) {
   const lowerMsg = (message || '').toLowerCase();
@@ -731,9 +780,14 @@ async function chatWithDaegu(userMessage, sessionId = 'default', userName = '') 
       systemMessage += `\n\n현재 위치: ${spot.name}\n- ${spot.name}에서 뭐 할지 자연스럽게 제안\n- 구체적인 가게 이름 대신 "이 근처", "메인 거리", "골목" 같은 표현 사용\n- 1-2문장으로 간결하게 설명`;
     }
 
-    // 음식 관련 질문
+    // 음식 관련 질문 - 상호명 절대 금지!
     if (SAFETY_ENABLED && policy.isFoodQuery(userMessage)) {
-      systemMessage += `\n\n[맛집 안내]\n- 구체적인 가게 이름 대신 "메인 거리 쪽", "골목 안" 같은 위치로 안내\n- "매운 거 좋아?" 같은 취향 물어보기도 좋음`;
+      systemMessage += `\n\n[맛집 안내 - 절대 상호명 언급 금지!]
+⚠️ 구체적인 가게 이름, 상호명, 브랜드를 절대 언급하지 말 것!
+- 위치로만 안내: "메인 거리 쪽", "골목 안쪽", "이 근처"
+- 음식 종류: "한식집", "카페", "치킨집", "분식집"
+- 취향 물어보기: "매운 거 좋아해?", "고기 땡겨?", "달달한 거?"
+- 절대 금지: "○○식당", "○○집", "유명한 ○○"`;
     }
 
     // OpenAI API 호출
@@ -780,6 +834,9 @@ async function chatWithDaegu(userMessage, sessionId = 'default', userName = '') 
     if (SAFETY_ENABLED) {
       aiMessage = policy.enforceOutput({ text: aiMessage, session, spots: DAEGU_SPOTS });
     }
+
+    // 상호명 패턴 필터링 (AI가 실수로 언급한 경우 대비)
+    aiMessage = filterRestaurantNames(aiMessage);
 
     // 장소명 필터링 (초반에만 적용, 더 유연하게)
     const currentTurns = session.conversationTurns || 0;
