@@ -109,11 +109,11 @@ function App() {
             src={sponsorImage}
             alt="스폰서"
             style={{
-              width: '500px',
+              width: '400px',
               position: 'absolute',
               bottom: '40px',
               zIndex: 10,
-              filter: 'drop-shadow(0 0 15px rgba(255, 255, 255, 1)) drop-shadow(0 0 30px rgba(255, 255, 255, 0.9)) drop-shadow(0 0 50px rgba(255, 255, 255, 0.7)) drop-shadow(0 0 80px rgba(255, 255, 255, 0.5))'
+              filter: 'drop-shadow(0 0 10px rgba(255, 255, 255, 1)) drop-shadow(0 0 20px rgba(255, 255, 255, 1)) drop-shadow(0 0 30px rgba(255, 255, 255, 0.9)) drop-shadow(0 0 50px rgba(255, 255, 255, 0.8)) drop-shadow(0 0 70px rgba(255, 255, 255, 0.7)) drop-shadow(0 0 100px rgba(255, 255, 255, 0.6)) drop-shadow(0 0 130px rgba(255, 255, 255, 0.5))'
             }}
           />
         </header>
