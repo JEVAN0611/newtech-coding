@@ -109,10 +109,11 @@ function App() {
             src={sponsorImage}
             alt="스폰서"
             style={{
-              width: '300px',
+              width: '700px',
               position: 'absolute',
               bottom: '40px',
-              zIndex: 10
+              zIndex: 10,
+              filter: 'drop-shadow(0 0 20px rgba(255, 255, 255, 0.9)) drop-shadow(0 0 40px rgba(255, 255, 255, 0.6))'
             }}
           />
         </header>
