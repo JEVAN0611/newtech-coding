@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import './App.css';
 import WebtoonViewer from './components/webtoon/WebtoonViewer';
 import heroTitle from './assets/images/hero-title.png';
+import sponsorImage from './assets/images/sponsor-image.png';
 import { warmUpServer } from './services/api';
 
 function App() {
@@ -81,7 +82,7 @@ function App() {
           />
           
           {/* 클릭 가능한 스크롤 유도 섹션 (타이틀 아래로 더 내림) */}
-          <div 
+          <div
             className="scroll-indicator"
             onClick={scrollToWebtoon}
             role="button"
@@ -94,14 +95,26 @@ function App() {
           >
             <p>아래로 스크롤해서 대구-대구와 만나보세요!</p>
             <div className="scroll-arrow">↓</div>
-            <p style={{ 
-              fontSize: '12px', 
-              opacity: '0.7', 
-              marginTop: '10px' 
+            <p style={{
+              fontSize: '12px',
+              opacity: '0.7',
+              marginTop: '10px'
             }}>
               클릭해보세요!
             </p>
           </div>
+
+          {/* 스폰서 이미지 */}
+          <img
+            src={sponsorImage}
+            alt="스폰서"
+            style={{
+              width: '300px',
+              position: 'absolute',
+              bottom: '40px',
+              zIndex: 10
+            }}
+          />
         </header>
         
         <main>
