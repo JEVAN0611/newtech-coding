@@ -109,7 +109,7 @@ function App() {
             src={sponsorImage}
             alt="스폰서"
             style={{
-              width: '400px',
+              width: '450px',
               position: 'absolute',
               bottom: '40px',
               zIndex: 10,
